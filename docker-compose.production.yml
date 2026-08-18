@@ -1,0 +1,43 @@
+services:
+  control-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: changeshield
+      POSTGRES_USER: changeshield
+      POSTGRES_PASSWORD: ${CONTROL_DB_PASSWORD:?required}
+    volumes: [control_db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U changeshield"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  control:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://changeshield:${CONTROL_DB_PASSWORD}@control-db:5432/changeshield
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?required}
+      DJANGO_DEBUG: "false"
+      ALLOWED_HOSTS: ${PUBLIC_HOSTNAME:?required}
+      CSRF_TRUSTED_ORIGINS: https://${PUBLIC_HOSTNAME}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    command: ["sh", "-c", "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 30 --access-logfile -"]
+    depends_on:
+      control-db: {condition: service_healthy}
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME:?required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [control]
+volumes:
+  control_db:
+  caddy_data:
+  caddy_config:
+

@@ -1,0 +1,6 @@
+{% extends 'control/base.html' %}{% block title %}{{ workflow.name }} · ChangeShield{% endblock %}{% block content %}
+<div class="page-head"><div><p class="eyebrow">PROTECTED WORKFLOW</p><h1>{{ workflow.name }}</h1><p>{{ workflow.description }}</p></div><div class="actions"><button data-post="/api/v1/workflows/{{ workflow.id }}/runs">Queue run</button><button class="secondary" data-post="/api/v1/workflows/{{ workflow.id }}/rollback" data-confirm="Roll back to the previous immutable version?">Rollback</button></div></div>
+<div class="grid"><section class="panel"><div class="panel-head"><h2>Active specification</h2><span class="status ok">v{{ workflow.active_version.number }}</span></div><pre>{{ workflow.active_version.spec|pprint }}</pre></section><section class="panel"><div class="panel-head"><h2>Version history</h2></div><ol class="timeline">{% for version in versions %}<li><strong>v{{ version.number }}</strong><span>{{ version.change_reason }}</span><small>{{ version.created_at }}</small></li>{% endfor %}</ol></section></div>
+<section class="panel"><div class="panel-head"><h2>Run history</h2></div>{% include 'control/run_table.html' %}</section>
+{% endblock %}
+

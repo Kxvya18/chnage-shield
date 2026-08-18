@@ -1,0 +1,9 @@
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client && rm -rf /var/lib/apt/lists/*
+WORKDIR /service
+COPY sandbox_reset ./sandbox_reset
+RUN useradd --create-home --uid 10002 resetter && mkdir -p /snapshot && chown -R resetter:resetter /snapshot /service
+USER resetter
+EXPOSE 8080
+CMD ["python", "-m", "sandbox_reset.server"]
+

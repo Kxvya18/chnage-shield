@@ -1,0 +1,4 @@
+const csrftoken=()=>document.cookie.split('; ').find(v=>v.startsWith('csrftoken='))?.split('=')[1]||'';
+const toast=message=>{const node=document.querySelector('#toast');node.textContent=message;node.classList.add('show');setTimeout(()=>node.classList.remove('show'),2600)};
+document.querySelectorAll('[data-post]').forEach(button=>button.addEventListener('click',async()=>{if(button.dataset.confirm&&!confirm(button.dataset.confirm))return;button.disabled=true;try{const response=await fetch(button.dataset.post,{method:'POST',headers:{'X-CSRFToken':csrftoken(),'Content-Type':'application/json'},body:'{}'});const data=await response.json();if(!response.ok)throw new Error(data.error||(data.errors||['Request failed']).join(' '));toast(data.status||'Request accepted');setTimeout(()=>location.reload(),650)}catch(error){toast(error.message);button.disabled=false}}));
+

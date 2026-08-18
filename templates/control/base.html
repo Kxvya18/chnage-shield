@@ -1,0 +1,15 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}ChangeShield{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'app.css' %}">
+</head>
+<body>
+<nav><a class="brand" href="/">Change<span>Shield</span></a><div><a href="/">Control room</a><a href="/audit/">Audit log</a><form action="/logout/" method="post" class="inline">{% csrf_token %}<button class="link">Sign out</button></form></div></nav>
+<main>{% block content %}{% endblock %}</main>
+<div id="toast" role="status"></div>
+<script src="{% static 'app.js' %}"></script>
+</body></html>
+

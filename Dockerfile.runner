@@ -1,0 +1,10 @@
+FROM mcr.microsoft.com/playwright/python:v1.54.0-noble
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /runner
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY edge ./edge
+RUN useradd --create-home --uid 10001 runner && mkdir -p /artifacts && chown -R runner:runner /runner /artifacts
+USER runner
+CMD ["python", "-m", "edge.client"]
+

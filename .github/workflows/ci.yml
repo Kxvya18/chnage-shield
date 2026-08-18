@@ -1,0 +1,16 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -r requirements-dev.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: python manage.py check --deploy
+        env: {DJANGO_DEBUG: "false", DJANGO_SECRET_KEY: "ci-only-long-secret-with-more-than-fifty-characters-123456789", ALLOWED_HOSTS: "example.test"}
+      - run: coverage run manage.py test
+        env: {RUN_BROWSER_TESTS: "true"}
+      - run: coverage report --fail-under=80

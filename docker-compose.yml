@@ -1,0 +1,99 @@
+services:
+  control-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: changeshield
+      POSTGRES_USER: changeshield
+      POSTGRES_PASSWORD: ${CONTROL_DB_PASSWORD:-local-control-password}
+    volumes: [control_db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U changeshield"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  control:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://changeshield:${CONTROL_DB_PASSWORD:-local-control-password}@control-db:5432/changeshield
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-only-secret-key}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,control}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      RUNNER_TOKEN: ${RUNNER_TOKEN:-local-runner-token-change-me}
+      DEMO_ADMIN_USERNAME: ${DEMO_ADMIN_USERNAME:-operator}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-operator123}
+    command: ["sh", "-c", "python manage.py migrate && python manage.py seed_demo && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile -"]
+    ports: ["8000:8000"]
+    depends_on:
+      control-db: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  odoo-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: ${ODOO_DB_PASSWORD:-local-odoo-password}
+    volumes: [odoo_db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  odoo:
+    image: odoo:19.0
+    environment:
+      HOST: odoo-db
+      USER: odoo
+      PASSWORD: ${ODOO_DB_PASSWORD:-local-odoo-password}
+    ports: ["8069:8069"]
+    volumes: [odoo_data:/var/lib/odoo]
+    depends_on:
+      odoo-db: {condition: service_healthy}
+
+  sandbox-reset:
+    build:
+      context: .
+      dockerfile: Dockerfile.reset
+    environment:
+      SANDBOX_RESET_TOKEN: ${SANDBOX_RESET_TOKEN:-local-reset-token-change-me}
+      ODOO_DB_HOST: odoo-db
+      ODOO_DB_USER: odoo
+      ODOO_DB_PASSWORD: ${ODOO_DB_PASSWORD:-local-odoo-password}
+      ODOO_DATABASE: ${ODOO_DATABASE:-changeshield}
+    volumes: [odoo_snapshot:/snapshot]
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      odoo-db: {condition: service_healthy}
+
+  runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.runner
+    environment:
+      CONTROL_PLANE_URL: http://control:8000
+      RUNNER_TOKEN: ${RUNNER_TOKEN:-local-runner-token-change-me}
+      ODOO_BASE_URL: http://odoo:8069
+      ODOO_USERNAME: ${ODOO_USERNAME:-requester@example.test}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:-demo-only-password}
+      SANDBOX_RESET_URL: http://sandbox-reset:8080/restore
+      SANDBOX_RESET_TOKEN: ${SANDBOX_RESET_TOKEN:-local-reset-token-change-me}
+      HEADLESS: "true"
+    volumes: [runner_artifacts:/artifacts]
+    depends_on:
+      control: {condition: service_healthy}
+      odoo: {condition: service_started}
+      sandbox-reset: {condition: service_started}
+
+volumes:
+  control_db:
+  odoo_db:
+  odoo_data:
+  runner_artifacts:
+  odoo_snapshot:

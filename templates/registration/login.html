@@ -1,0 +1,2 @@
+{% load static %}<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in · ChangeShield</title><link rel="stylesheet" href="{% static 'app.css' %}"></head><body class="login"><form method="post" class="login-card">{% csrf_token %}<p class="eyebrow">CHANGESHIELD CONTROL PLANE</p><h1>Operator sign in</h1>{{ form.as_p }}<button type="submit">Sign in</button></form></body></html>
+

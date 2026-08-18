@@ -1,0 +1,13 @@
+{
+  "name": "Club procurement: RFQ approval",
+  "version": 1,
+  "steps": [
+    {"id":"open_login","action":"navigate","url":"/web/login","postcondition":{"url_contains":"/web/login"}},
+    {"id":"enter_email","action":"fill","locator":{"strategy":"label","value":"Email"},"value":"${ODOO_USERNAME}"},
+    {"id":"enter_password","action":"fill","locator":{"strategy":"label","value":"Password"},"value":"${ODOO_PASSWORD}"},
+    {"id":"login","action":"click","locator":{"strategy":"role","role":"button","name":"Log in"},"postcondition":{"url_contains":"/web"}},
+    {"id":"open_purchase","action":"click","locator":{"strategy":"role","role":"link","name":"Purchasing"},"postcondition":{"url_contains":"purchase"}},
+    {"id":"wait_purchase","action":"wait_for","locator":{"strategy":"role","role":"heading","name":"Requests for Quotation"}},
+    {"id":"assert_purchase_url","action":"assert_url","value":"purchase"}
+  ]
+}
