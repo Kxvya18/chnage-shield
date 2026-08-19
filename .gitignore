@@ -1,6 +1,16 @@
 .env
 .venv/
 __pycache__/
+*.log
+*.swp
+*.swo
+*.tmp
+*.bak
+*.orig
+.DS_Store
+.idea/
+.vscode/
+node_modules/
 *.py[cod]
 db.sqlite3
 media/
@@ -9,4 +19,10 @@ playwright-report/
 test-results/
 .coverage
 htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage.xml
 
+
+staticfiles/
